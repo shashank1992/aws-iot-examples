@@ -9,6 +9,128 @@ or in the "license" file accompanying this file. This file is distributed on an 
 */
 (function() {
   'use strict';
+  var msgs= [];
+  //yVal = msgs.length>0?JSON.parse((msgs[msgs.length-1]).content).temp:100;
+        window.onload = function () {
+              var dataPoints1 = [];
+          var dataPoints2 = [];
+
+          var chart = new CanvasJS.Chart("chartContainer",{
+            zoomEnabled: true,
+            title: {
+              text: "Temperature and Humidity"    
+            },
+            toolTip: {
+              shared: true
+              
+            },
+            legend: {
+              verticalAlign: "top",
+              horizontalAlign: "center",
+                                      fontSize: 14,
+              fontWeight: "bold",
+              fontFamily: "calibri",
+              fontColor: "dimGrey"
+            },
+            axisX: {
+              title: "Real time updates every 5 secs"
+            },
+            axisY:{
+              prefix: '',
+              includeZero: false
+            }, 
+            data: [{ 
+              // dataSeries1
+              type: "line",
+              xValueType: "dateTime",
+              showInLegend: true,
+              name: "Temperature",
+              dataPoints: dataPoints1
+            },
+            {       
+              // dataSeries2
+              type: "line",
+              xValueType: "dateTime",
+              showInLegend: true,
+              name: "Humidity" ,
+              dataPoints: dataPoints2
+            }],
+                legend:{
+                  cursor:"pointer",
+                  itemclick : function(e) {
+                    if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+                      e.dataSeries.visible = false;
+                    }
+                    else {
+                      e.dataSeries.visible = true;
+                    }
+                    chart.render();
+                  }
+                }
+          });
+
+
+
+          var updateInterval = 5000;
+          // initial value
+          var yValue1 = 50; 
+          var yValue2 = 50;
+
+          var time = new Date;
+          time.setHours(9);
+          time.setMinutes(30);
+          time.setSeconds(0);
+          time.setMilliseconds(0);
+          // starting at 9.30 am
+
+          var updateChart = function (count) {
+            count = count || 1;
+
+            // count is number of times loop runs to generate random dataPoints. 
+
+            for (var i = 0; i < count; i++) {
+              
+              // add interval duration to time        
+              time.setTime(time.getTime()+ updateInterval);
+
+
+              // generating random values
+              var deltaY1 = msgs.length>1?JSON.parse((msgs[msgs.length-2]).content).temp:100;
+              var deltaY2 = msgs.length>1?JSON.parse((msgs[msgs.length-2]).content).hum:100;
+
+              // adding random value and rounding it to two digits. 
+              yValue1 = Math.round(deltaY1);
+              yValue2 = Math.round(deltaY2);
+              console.log(yValue1,yValue2);
+              // pushing the new values
+              dataPoints1.push({
+                x: time.getTime(),
+                y: yValue1
+              });
+              dataPoints2.push({
+                x: time.getTime(),
+                y: yValue2
+              });
+
+
+            };
+
+            // updating legend text with  updated with y Value 
+            chart.options.data[0].legendText = " temperature  " + yValue1;
+            chart.options.data[1].legendText = " Humidity  " + yValue2; 
+
+            chart.render();
+
+          };
+
+          // generates first set of dataPoints 
+          updateChart(5);  
+           
+          // update chart after specified interval 
+          setInterval(function(){updateChart()}, updateInterval);
+        
+
+        }     
 
   function LogMsg(type, content){
     this.type = type;
@@ -56,53 +178,7 @@ or in the "license" file accompanying this file. This file is distributed on an 
     this.regionName = 'ap-southeast-1';
     this.logs = new LogService();
     this.clients = new ClientControllerCache(scope, this.logs);   
-    window.onload = function () {
-
-    var dps = []; // dataPoints
-
-    var chart = new CanvasJS.Chart("chartContainer",{
-      title :{
-        text: "Live Random Data"
-      },      
-      data: [{
-        type: "line",
-        dataPoints: dps 
-      }]
-    });
-
-    var xVal = 0;
-    var yVal = 100; 
-    var updateInterval = 100;
-    var dataLength = 500; // number of dataPoints visible at any point
-
-    var updateChart = function (count) {
-      count = count || 1;
-      // count is number of times loop runs to generate random dataPoints.
-      
-      for (var j = 0; j < count; j++) { 
-        yVal = yVal +  Math.round(5 + Math.random() *(-5-5));
-        dps.push({
-          x: xVal,
-          y: yVal
-        });
-        xVal++;
-      };
-      if (dps.length > dataLength)
-      {
-        dps.shift();        
-      }
-      
-      chart.render();   
-
-    };
-
-    // generates first set of dataPoints
-    updateChart(dataLength); 
-
-    // update chart after specified time. 
-    setInterval(function(){updateChart()}, updateInterval); 
-
-  }     
+        
   }
 
   AppController.$inject = ['$scope'];
@@ -121,12 +197,13 @@ or in the "license" file accompanying this file. This file is distributed on an 
     }
   };
 
+
   AppController.prototype.removeClient = function(clientCtr) {
     this.clients.removeClient(clientCtr);
   };
 
   // would be better to use a seperate derective
-  function ClientController(client, logs) {
+  function ClientController(client, logs, update) {
     this.client = client;
     this.topicName = 'sample';
     this.message = null;
@@ -140,6 +217,7 @@ or in the "license" file accompanying this file. This file is distributed on an 
     this.client.on('messageArrived', function(msg){
       self.logs.log('messageArrived in ' + self.id);
       self.msgs.push(new ReceivedMsg(msg));
+      msgs.push(new ReceivedMsg(msg));
     });
     this.client.on('connected', function(){
       self.logs.log('connected');

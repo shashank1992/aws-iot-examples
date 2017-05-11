@@ -9,6 +9,7 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
+    "dygraphs": "^2.0.0",
     "gulp": "^3.9.0",
     "gulp-serve": "^1.2.0"
   }

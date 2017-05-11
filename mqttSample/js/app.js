@@ -49,13 +49,60 @@ or in the "license" file accompanying this file. This file is distributed on an 
 
   /** controller of the app */
   function AppController(scope){
-    this.clientId = 'someClientId';
-    this.endpoint = null;
-    this.accessKey = null;
-    this.secretKey = null;
-    this.regionName = 'us-east-1';
+    this.clientId = 'someClientId2';
+    this.endpoint = 'a28c009dzez6uk.iot.ap-southeast-1.amazonaws.com';
+    this.accessKey = 'AKIAJNGLGUXVJFJFYVGQ';
+    this.secretKey = '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';
+    this.regionName = 'ap-southeast-1';
     this.logs = new LogService();
-    this.clients = new ClientControllerCache(scope, this.logs);
+    this.clients = new ClientControllerCache(scope, this.logs);   
+    window.onload = function () {
+
+    var dps = []; // dataPoints
+
+    var chart = new CanvasJS.Chart("chartContainer",{
+      title :{
+        text: "Live Random Data"
+      },      
+      data: [{
+        type: "line",
+        dataPoints: dps 
+      }]
+    });
+
+    var xVal = 0;
+    var yVal = 100; 
+    var updateInterval = 100;
+    var dataLength = 500; // number of dataPoints visible at any point
+
+    var updateChart = function (count) {
+      count = count || 1;
+      // count is number of times loop runs to generate random dataPoints.
+      
+      for (var j = 0; j < count; j++) { 
+        yVal = yVal +  Math.round(5 + Math.random() *(-5-5));
+        dps.push({
+          x: xVal,
+          y: yVal
+        });
+        xVal++;
+      };
+      if (dps.length > dataLength)
+      {
+        dps.shift();        
+      }
+      
+      chart.render();   
+
+    };
+
+    // generates first set of dataPoints
+    updateChart(dataLength); 
+
+    // update chart after specified time. 
+    setInterval(function(){updateChart()}, updateInterval); 
+
+  }     
   }
 
   AppController.$inject = ['$scope'];
@@ -81,7 +128,7 @@ or in the "license" file accompanying this file. This file is distributed on an 
   // would be better to use a seperate derective
   function ClientController(client, logs) {
     this.client = client;
-    this.topicName = 'seattle/traffic';
+    this.topicName = 'sample';
     this.message = null;
     this.msgs = [];
     this.logs = logs;
